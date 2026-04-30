@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Consulta de Vales – Electro Puno S.A.A.</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --azul:       #1a4f8a;
+      --azul-dark:  #123a66;
+      --naranja:    #e85d04;
+      --naranja-hover: #c94f03;
+      --blanco:     #ffffff;
+      --gris-claro: #f4f6f9;
+      --gris-texto: #6b7280;
+      --texto:      #1a1f2e;
+      --borde:      #dde3ed;
+      --radio:      12px;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--gris-claro);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 320px;
+      background: linear-gradient(135deg, var(--azul) 0%, var(--azul-dark) 100%);
+      z-index: 0;
+    }
+
+    .wrapper {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 480px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      padding-top: 1rem;
+    }
+
+    .logo-wrap {
+      width: 90px;
+      height: 90px;
+      background: var(--blanco);
+      border-radius: 50%;
+      margin: 0 auto 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      overflow: hidden;
+    }
+
+    .logo-wrap img { width: 75px; height: 75px; object-fit: contain; }
+
+    .logo-fallback {
+      font-size: 28px; font-weight: 600;
+      color: var(--azul); letter-spacing: -1px;
+    }
+
+    .header h1 { font-size: 20px; font-weight: 600; color: var(--blanco); margin-bottom: 4px; }
+    .header p { font-size: 14px; color: rgba(255,255,255,0.75); }
+
+    .card {
+      background: var(--blanco);
+      border-radius: var(--radio);
+      padding: 1.75rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+    }
+
+    .label { font-size: 13px; font-weight: 500; color: var(--gris-texto); margin-bottom: 8px; display: block; }
+    .input-row { display: flex; gap: 8px; }
+
+    input[type="text"] {
+      flex: 1; height: 46px;
+      border: 1.5px solid var(--borde); border-radius: 8px;
+      padding: 0 14px; font-size: 16px;
+      font-family: 'Outfit', sans-serif;
+      color: var(--texto); background: var(--blanco);
+      outline: none; transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--azul);
+      box-shadow: 0 0 0 3px rgba(26,79,138,0.10);
+    }
+
+    input[type="text"]::placeholder { color: #b0b8c8; }
+
+    .btn {
+      height: 46px; padding: 0 22px;
+      background: var(--naranja); color: var(--blanco);
+      border: none; border-radius: 8px;
+      font-size: 15px; font-weight: 600;
+      font-family: 'Outfit', sans-serif;
+      cursor: pointer; transition: background 0.2s, transform 0.1s;
+      white-space: nowrap;
+    }
+
+    .btn:hover { background: var(--naranja-hover); }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .hint { font-size: 12px; color: #b0b8c8; margin-top: 6px; }
+
+    .loading {
+      display: none; text-align: center;
+      padding: 1.25rem 0 0.5rem;
+      color: var(--gris-texto); font-size: 14px;
+    }
+
+    .spinner {
+      display: inline-block; width: 20px; height: 20px;
+      border: 2px solid var(--borde); border-top-color: var(--azul);
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+      vertical-align: middle; margin-right: 6px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-box {
+      display: none; margin-top: 1rem;
+      padding: 0.75rem 1rem; background: #fff4f4;
+      border: 1px solid #f5c2c2; border-radius: 8px;
+      color: #c0392b; font-size: 14px;
+    }
+
+    .result { display: none; margin-top: 1.25rem; }
+
+    .result-card {
+      border: 1px solid var(--borde); border-radius: 10px;
+      overflow: hidden; margin-bottom: 12px;
+    }
+
+    .result-header { background: var(--azul); padding: 0.9rem 1.1rem; }
+
+    .result-header .etiqueta {
+      font-size: 11px; color: rgba(255,255,255,0.65);
+      text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 3px;
+    }
+
+    .result-header .nombre { font-size: 17px; font-weight: 600; color: var(--blanco); }
+
+    .result-body { padding: 1rem 1.1rem; display: flex; flex-direction: column; }
+
+    .campo {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 0; border-bottom: 1px solid var(--borde);
+    }
+
+    .campo:last-child { border-bottom: none; }
+    .campo-label { font-size: 13px; color: var(--gris-texto); }
+    .campo-valor { font-size: 14px; font-weight: 500; color: var(--texto); text-align: right; }
+
+    .badge-vale {
+      background: var(--naranja); color: var(--blanco);
+      padding: 4px 12px; border-radius: 20px;
+      font-size: 13px; font-weight: 600;
+    }
+
+    .monto-grande { font-size: 20px; font-weight: 600; color: var(--azul); }
+
+    .footer {
+      text-align: center; margin-top: 1.5rem;
+      font-size: 12px; color: rgba(255,255,255,0.5);
+    }
+  </style>
+</head>
+<body>
+
+<div class="wrapper">
+  <div class="header">
+    <div class="logo-wrap">
+      <img
+        src="https://www.electropuno.com.pe/wp-content/uploads/2020/01/logo-electro-puno.png"
+        alt="Electro Puno"
+        onerror="this.style.display='none'; this.nextElementSibling.style.display='block'"
+      />
+      <span class="logo-fallback" style="display:none;">EP</span>
+    </div>
+    <h1>Consulta de Vales</h1>
+    <p>Electro Puno S.A.A.</p>
+  </div>
+
+  <div class="card">
+    <label class="label" for="dni-input">Número de DNI</label>
+    <div class="input-row">
+      <input type="text" id="dni-input" placeholder="Ej: 12345678" maxlength="12" inputmode="numeric" />
+      <button class="btn" id="btn-buscar" onclick="consultar()">Buscar</button>
+    </div>
+    <p class="hint">Ingresa tu DNI sin espacios ni puntos</p>
+
+    <div class="loading" id="loading">
+      <span class="spinner"></span> Buscando tu vale...
+    </div>
+
+    <div class="error-box" id="error-box"></div>
+    <div class="result" id="result"></div>
+  </div>
+
+  <div class="footer">© Electro Puno S.A.A. · Consulta interna de vales</div>
+</div>
+
+<script>
+  // ═══════════════════════════════════════════════════════════════
+  // PEGA AQUÍ LA URL COMPLETA DE POWER AUTOMATE (con &sig=...)
+  const API_URL = "PEGA_TU_URL_DE_POWER_AUTOMATE_AQUI";
+  // ═══════════════════════════════════════════════════════════════
+
+  // Mapeo campos SharePoint:
+  // Title=RUC, field_1=SUMINISTRO, field_2=DNI, field_3=APATERNO,
+  // field_4=AMATERNO, field_5=NOMBRES, field_6=VALE, field_7=UBIGEO,
+  // field_8=VENCIMIENTO, field_9=MONEDA, field_10=MONTO,
+  // field_11=PROVINCIA, field_12=DISTRITO
+
+  const dniInput  = document.getElementById("dni-input");
+  const resultDiv = document.getElementById("result");
+  const errorBox  = document.getElementById("error-box");
+  const loading   = document.getElementById("loading");
+  const btnBuscar = document.getElementById("btn-buscar");
+
+  dniInput.addEventListener("keydown", e => { if (e.key === "Enter") consultar(); });
+  dniInput.addEventListener("input", () => { dniInput.value = dniInput.value.replace(/\D/g, ""); });
+
+  async function consultar() {
+    const dni = dniInput.value.trim();
+    resultDiv.style.display = "none";
+    errorBox.style.display  = "none";
+
+    if (!dni || dni.length < 7) {
+      mostrarError("Ingresa un DNI válido (mínimo 7 dígitos).");
+      return;
+    }
+
+    loading.style.display = "block";
+    btnBuscar.disabled = true;
+
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dni: dni })
+      });
+
+      const data = await res.json();
+      loading.style.display = "none";
+      btnBuscar.disabled = false;
+
+      // Power Automate puede devolver { value: [...] } o directamente [...]
+      const items = Array.isArray(data) ? data : (data.value || []);
+
+      if (!items.length) {
+        mostrarError("No se encontró ningún vale para ese DNI.");
+        return;
+      }
+
+      resultDiv.innerHTML = items.map(d => {
+        const nombres    = `${d.field_5} ${d.field_3} ${d.field_4}`;
+        const vencimiento = formatFecha(d.field_8 || "");
+        const monto      = formatMonto(d.field_10 || "0");
+
+        return `
+          <div class="result-card">
+            <div class="result-header">
+              <div class="etiqueta">Titular del vale</div>
+              <div class="nombre">${nombres}</div>
+            </div>
+            <div class="result-body">
+              <div class="campo">
+                <span class="campo-label">DNI</span>
+                <span class="campo-valor">${d.field_2}</span>
+              </div>
+              <div class="campo">
+                <span class="campo-label">Código de vale</span>
+                <span class="badge-vale">${d.field_6}</span>
+              </div>
+              <div class="campo">
+                <span class="campo-label">Monto</span>
+                <span class="monto-grande">${d.field_9} ${monto}</span>
+              </div>
+              <div class="campo">
+                <span class="campo-label">Vencimiento</span>
+                <span class="campo-valor">${vencimiento}</span>
+              </div>
+              <div class="campo">
+                <span class="campo-label">Ubicación</span>
+                <span class="campo-valor">${d.field_12}, ${d.field_11}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      resultDiv.style.display = "block";
+
+    } catch (err) {
+      loading.style.display = "none";
+      btnBuscar.disabled = false;
+      mostrarError("Error de conexión. Verifica tu internet e intenta de nuevo.");
+    }
+  }
+
+  function formatFecha(f) {
+    f = String(f).trim();
+    if (f.length !== 8) return f;
+    return `${f.slice(6,8)}/${f.slice(4,6)}/${f.slice(0,4)}`;
+  }
+
+  function formatMonto(m) {
+    return (parseInt(m) / 100).toFixed(2);
+  }
+
+  function mostrarError(msg) {
+    errorBox.textContent = msg;
+    errorBox.style.display = "block";
+  }
+</script>
+
+</body>
+</html>
